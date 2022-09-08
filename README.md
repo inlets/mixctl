@@ -1,4 +1,4 @@
-## mixctl - a tiny TCP load balancer 🍸
+## mixctl 🍸 - a tiny TCP load balancer 
 
 mixctl by [inlets](https://docs.inlets.dev) is a tiny TCP load balancer. It was written to help [inlets users](https://docs.inlets.dev) to expose multiple services hosted on different servers over a single TCP tunnel.
 
