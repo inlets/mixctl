@@ -45,7 +45,7 @@ rules:
 
 Connections are load balanced if there are multiple hosts in the `to` field.
 
-To make the upstream address listen on multiple ports, use `0.0.0.0` instead of `127.0.0.1` in the `from` field.
+To make the upstream address listen on all interfaces, use `0.0.0.0` instead of `127.0.0.1` in the `from` field.
 
 The port for the from and to addresses do not need to match.
 
