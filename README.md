@@ -1,6 +1,8 @@
-## mixctl
+## mixctl - Forward TCP to different upstream servers behind a tunnel
 
 mixctl by inlets is a TCP proxy to forward multiple TCP connections over a single inlets Pro TCP tunnel.
+
+## What's it for?
 
 mixctl can be used to replace HAProxy, Traefik and/or Nginx with streams in certain scenarios.
 
