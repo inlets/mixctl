@@ -70,11 +70,12 @@ func forward(name, from string, to []string) error {
 	seed := time.Now().UnixNano()
 	rand.Seed(seed)
 
+	fmt.Printf("Listening on: %s\n", from)
 	l, err := net.Listen("tcp", from)
 	if err != nil {
 		return fmt.Errorf("error listening on %s %s", from, err.Error())
 	}
-	log.Printf("listening on %s", from)
+
 	for {
 		conn, err := l.Accept()
 		if err != nil {
