@@ -6,6 +6,12 @@ mixctl can be used to replace HAProxy, Traefik and/or Nginx with streams in cert
 
 It could also be used as a lightweight load-balancer for K3s servers.
 
+Perhaps use this instead of IP Virtual Server (IPVS)?
+
+This is a lightweight, multi-arch, multi-OS, uncomplicated way to reverse proxy different TCP connections and/or load balance them.
+
+[IPVS](https://debugged.it/blog/ipvs-the-linux-load-balancer/) is going to be more performant, but requires a Linux host and capabilities, which you may be remiss to grant through Docker or Kubernetes.
+
 ## Usage:
 
 1) Write a rules.yaml file such as: [./rules.example.yaml](./rules/example.yaml):
