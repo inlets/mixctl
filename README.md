@@ -31,7 +31,7 @@ rules:
 
 2) Run the tool: `mixctl -f ./rules.yaml`
 
-3) Run `inlets-pro tcp client --ports 6443 --ports 22222`
+3) Run `inlets-pro tcp client --ports 6443 --ports 22222 --upstream 127.0.0.1`
 
 4) Connect to ports 6443 or 22222 on your inlets Pro tunnel server to access any of the servers in the "to" array
 
