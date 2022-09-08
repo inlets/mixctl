@@ -2,6 +2,10 @@
 
 mixctl by inlets is a TCP proxy to forward multiple TCP connections over a single inlets Pro TCP tunnel.
 
+mixctl can be used to replace HAProxy, Traefik and/or Nginx with streams in certain scenarios.
+
+It could also be used as a lightweight load-balancer for K3s servers.
+
 ## Usage:
 
 1) Write a rules.yaml file such as: [./rules.example.yaml](./rules/example.yaml):
