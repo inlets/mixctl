@@ -10,7 +10,7 @@ This is a lightweight, multi-arch, multi-OS, uncomplicated way to reverse proxy 
 
 ## Usage:
 
-1) Write a rules.yaml file such as: [./rules.example.yaml](./rules/example.yaml):
+1) Write a `rules.yaml` file such as: [rules.example.yaml](rules.example.yaml):
 
 ```yaml
 version: 0.1
