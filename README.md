@@ -1,6 +1,6 @@
 ## mixctl 🍸 - a tiny TCP load balancer 
 
-mixctl by [inlets](https://docs.inlets.dev) is a tiny TCP load balancer. It was written to help [inlets users](https://docs.inlets.dev) to expose multiple services hosted on different servers over a single TCP tunnel.
+mixctl by [inlets](https://docs.inlets.dev) is a tiny TCP load balancer written in Go. It was created to help [inlets users](https://docs.inlets.dev) to expose multiple services hosted on different servers over a single TCP tunnel.
 
 ## What's it for?
 
