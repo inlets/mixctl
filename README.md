@@ -43,6 +43,10 @@ To make the upstream address listen on all interfaces, use `0.0.0.0` instead of 
 
 The port for the from and to addresses do not need to match.
 
+See also:
+* `-t` - specify the dial timeout for an upstream host in the "to" field of the config file.
+* `-v` - verbose logging - set to false to turn off logs of connections established and closed.
+
 ## License
 
 This software is licensed MIT.
