@@ -5,6 +5,24 @@ PLATFORM := $(shell ./hack/platform-tag.sh)
 SOURCE_DIRS = main.go
 export GO111MODULE=on
 
+IMG_NAME?=mixctl
+TAG?=latest
+OWNER?=alexellis2
+SERVER?=docker.io
+
+.PHONY: publish
+publish:
+	@echo  $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) && \
+	docker buildx create --use --name=multiarch --node=multiarch && \
+	docker buildx build \
+		--platform linux/amd64,linux/arm/v7,linux/arm64,darwin/amd64,darwin/arm64 \
+		--push=true \
+        --build-arg GIT_COMMIT=$(GIT_COMMIT) \
+        --build-arg VERSION=$(VERSION) \
+		--tag $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) \
+		--no-cache \
+		.
+
 .PHONY: all
 all: gofmt test build dist hash
 
@@ -23,12 +41,12 @@ test:
 .PHONY: dist
 dist:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/mixctl
-	CGO_ENABLED=0 GOOS=darwin go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/mixctl-darwin
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -a -ldflags $(LDFLAGS) -installsuffix cgo -o bin/mixctl-darwin-arm64
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/mixctl-armhf
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/mixctl-arm64
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix cgo -o bin/mixctl.exe
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl
+	CGO_ENABLED=0 GOOS=darwin go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-darwin
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -a -ldflags $(LDFLAGS) -installsuffix netgo -o bin/mixctl-darwin-arm64
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-armhf
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-arm64
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl.exe
 
 .PHONY: hash
 hash:
