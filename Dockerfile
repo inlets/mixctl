@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.19 as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.18 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -16,9 +16,6 @@ WORKDIR /usr/bin/
 
 WORKDIR /go/src/github.com/inlets/mixctl
 COPY . .
-
-# Run a gofmt and exclude all vendored code.
-RUN test -z "$(gofmt -l $(find . -type f -name '*.go' -not -path "./vendor/*"))" || { echo "Run \"gofmt -s -w\" on your Golang code"; exit 1; }
 
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 \
     go build --ldflags "-s -w \
