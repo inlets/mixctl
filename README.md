@@ -47,6 +47,32 @@ See also:
 * `-t` - specify the dial timeout for an upstream host in the "to" field of the config file.
 * `-v` - verbose logging - set to false to turn off logs of connections established and closed.
 
+## Container image
+
+* [ghcr.io/inlets/mixctl:latest](ghcr.io/inlets/mixctl:latest)
+
+```bash
+docker run -ti ghcr.io/inlets/mixctl:latest
+```
+
+Make sure you mount in a config file, or create a new image with the config file added, along with exposing any ports you want to access from the Load Balancer:
+
+```
+docker run -v `pwd`/configs:/configs \
+  -p 6443:6443 \
+  -p 22222:22222 \
+   -ti ghcr.io/inlets/mixctl:latest -f /configs/rules.yaml
+```
+
+Or
+
+```Dockerfile
+FROM ghcr.io/inlets/mixctl:latest
+COPY configs configs
+
+ENTRYPOINT ["/mixctl", "-f", "/configs/rules.yaml"]
+```
+
 ## License
 
 This software is licensed MIT.
