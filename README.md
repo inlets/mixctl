@@ -49,7 +49,7 @@ See also:
 
 ## Container image
 
-* [ghcr.io/inlets/mixctl:latest](ghcr.io/inlets/mixctl:latest)
+* [ghcr.io/inlets/mixctl:latest](https://ghcr.io/inlets/mixctl)
 
 ```bash
 docker run -ti ghcr.io/inlets/mixctl:latest
