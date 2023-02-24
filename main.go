@@ -11,6 +11,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"strings"
 
 	"golang.org/x/sync/errgroup"
 	yaml "gopkg.in/yaml.v3"
@@ -74,15 +75,21 @@ func main() {
 
 		// Read destinations from a file
 		_to := []string{}
-		for _, to := range r.to {
+		for _, to := range r.To {
 			sb := strings.Split(to, ':')
 			if len(sb) == 2 && sb[0] == "file" {
-				addr = sb[1]
-				data, err := os.ReadFile(addr)
+				filename := sb[1]
+				data, err := os.ReadFile(filename)
 				if err != nil {
 					log.Printf("error reading the file %s", err.Error())
 				} else {
-					_to.append(addr)
+					lines := strings.Split(strings.ReplaceAll(data, "\r\n", "\n"), "\n")
+					for _, line := range(lines) {
+						addr := strings.Trim(line)
+						if addr != "" {
+							_to.append(line)
+						}
+					}
 				}
 			} else {
 				_to.append(to)
