@@ -59,7 +59,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Starting mixctl by https://inlets.dev/\n\n")
+	fmt.Printf("Starting mixctl by https://inlets.dev/\n\n") 
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(set.Rules))
@@ -71,8 +71,26 @@ func main() {
 	for _, rule := range set.Rules {
 		// Copy the value to avoid the loop variable being reused
 		r := rule
+
+		// Read destinations from a file
+		_to := []string{}
+		for _, to := range r.to {
+			sb := strings.Split(to, ':')
+			if len(sb) == 2 && sb[0] == "file" {
+				addr = sb[1]
+				data, err := os.ReadFile(addr)
+				if err != nil {
+					log.Printf("error reading the file %s", err.Error())
+				} else {
+					_to.append(addr)
+				}
+			} else {
+				_to.append(to)
+			}
+		}
+
 		go func() {
-			if err := forward(r.Name, r.From, r.To, verbose, dialTimeout); err != nil {
+			if err := forward(r.Name, r.From, _to, verbose, dialTimeout); err != nil {
 				log.Printf("error forwarding %s", err.Error())
 				os.Exit(1)
 			}
