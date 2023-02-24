@@ -29,6 +29,11 @@ rules:
     - 192.168.1.19:22
     - 192.168.1.21:22
     - 192.168.1.20:22
+
+- name: textfile
+  from: 127.0.0.1:33333
+  to:
+    - file:desinations.txt
 ```
 
 2) Run the tool: `mixctl -f ./rules.yaml`
