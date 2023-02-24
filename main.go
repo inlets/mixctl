@@ -86,14 +86,14 @@ func main() {
 					s := fmt.Sprintf("%s", data)
 					lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
 					for _, line := range(lines) {
-						addr := strings.Trim(line)
+						addr := strings.Trim(line, " ")
 						if addr != "" {
-							_to = _to.append(line)
+							_to = append(_to, line)
 						}
 					}
 				}
 			} else {
-				_to = _to.append(to)
+				_to = append(_to, to)
 			}
 		}
 
