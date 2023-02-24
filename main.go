@@ -88,12 +88,12 @@ func main() {
 					for _, line := range(lines) {
 						addr := strings.Trim(line)
 						if addr != "" {
-							_to.append(line)
+							_to = _to.append(line)
 						}
 					}
 				}
 			} else {
-				_to.append(to)
+				_to = _to.append(to)
 			}
 		}
 
