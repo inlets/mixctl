@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.18 as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -22,7 +22,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 \
     -X github.com/inlets/mixctl/version.GitCommit=${GIT_COMMIT} \
     -X github.com/inlets/mixctl/version.Version=${VERSION} \
     -X github.com/inlets/mixctl/version.Platform=${TARGETARCH}" \
-    -a -installsuffix netgo -o /usr/bin/mixctl
+    -o /usr/bin/mixctl
 
 FROM --platform=${TARGETPLATFORM:-linux/amd64} scratch as release
 COPY --from=builder /usr/bin/mixctl /
