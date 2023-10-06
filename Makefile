@@ -41,12 +41,12 @@ test:
 .PHONY: dist
 dist:
 	mkdir -p bin
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl
-	CGO_ENABLED=0 GOOS=darwin go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-darwin
-	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -a -ldflags $(LDFLAGS) -installsuffix netgo -o bin/mixctl-darwin-arm64
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-armhf
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl-arm64
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS) -a -installsuffix netgo -o bin/mixctl.exe
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags $(LDFLAGS) -o bin/mixctl
+	CGO_ENABLED=0 GOOS=darwin go build -ldflags $(LDFLAGS) -o bin/mixctl-darwin
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags $(LDFLAGS) -o bin/mixctl-darwin-arm64
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 go build -ldflags $(LDFLAGS) -o bin/mixctl-armhf
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags $(LDFLAGS) -o bin/mixctl-arm64
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags $(LDFLAGS) -o bin/mixctl.exe
 
 .PHONY: hash
 hash:
