@@ -33,29 +33,63 @@ func main() {
 		dialTimeout time.Duration
 	)
 
-	flag.StringVar(&file, "f", "", "Job to run or leave blank for job.yaml in current directory")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, `mixctl - TCP L4 load-balancer
+
+GitHub: https://github.com/inlets/mixctl
+
+Usage:
+
+  mixctl -f rules.yaml
+
+Example config file:
+
+version: 0.1
+
+rules:
+- name: rpi-k3s
+  from: 127.0.0.1:6443
+  to:
+    - 192.168.1.19:6443
+    - 192.168.1.21:6443
+    - 192.168.1.20:6443
+
+rules:
+- name: remap-local-ssh-port
+  from: 127.0.0.1:2222
+  to:
+    - 127.0.0.1:22
+
+Flags:
+
+`)
+
+		flag.PrintDefaults()
+	}
+
+	flag.StringVar(&file, "f", "rules.yaml", "Job to run or leave blank for job.yaml in current directory")
 	flag.BoolVar(&verbose, "v", true, "Verbose output for opened and closed connections")
 	flag.DurationVar(&dialTimeout, "t", time.Millisecond*1500, "Dial timeout")
 	flag.Parse()
 
 	if len(file) == 0 {
-		fmt.Fprintf(os.Stderr, "usage: mixctl -f rules.yaml\n")
+		flag.Usage()
 		os.Exit(1)
 	}
 
 	set := ForwardingSet{}
 	data, err := os.ReadFile(file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error reading file %s %s", file, err.Error())
+		fmt.Fprintf(os.Stderr, "Error reading %s %s\n\nRun mixctl --help for usage\n", file, err.Error())
 		os.Exit(1)
 	}
 	if err = yaml.Unmarshal(data, &set); err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing file %s %s", file, err.Error())
+		fmt.Fprintf(os.Stderr, "Error parsing file %s %s\n", file, err.Error())
 		os.Exit(1)
 	}
 
 	if len(set.Rules) == 0 {
-		fmt.Fprintf(os.Stderr, "no rules found in file %s", file)
+		fmt.Fprintf(os.Stderr, "No rules found in file %s\n", file)
 		os.Exit(1)
 	}
 
@@ -64,7 +98,7 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(set.Rules))
 	for _, rule := range set.Rules {
-		fmt.Printf("Forward (%s) from: %s to: %s\n", rule.Name, rule.From, rule.To)
+		fmt.Printf("Forwarding (%s) from: %s to: %s\n", rule.Name, rule.From, rule.To)
 	}
 	fmt.Println()
 
@@ -85,7 +119,8 @@ func main() {
 
 func forward(name, from string, to []string, verbose bool, dialTimeout time.Duration) error {
 	seed := time.Now().UnixNano()
-	rand.Seed(seed)
+
+	localRand := rand.New(rand.NewSource(seed))
 
 	fmt.Printf("Listening on: %s\n", from)
 	l, err := net.Listen("tcp", from)
@@ -104,7 +139,7 @@ func forward(name, from string, to []string, verbose bool, dialTimeout time.Dura
 
 		// pick randomly from the list of upstream servers
 		// available
-		index := rand.Intn(len(to))
+		index := localRand.Intn(len(to))
 		upstream := to[index]
 
 		// A separate Goroutine means the loop can accept another
