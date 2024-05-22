@@ -3,6 +3,7 @@ version: 0.1
 rules:
 - name: rpi-k3s
   from: 127.0.0.1:6443
+  algorithm: round-robin
   to:
     - 192.168.1.19:6443
     - 192.168.1.21:6443
@@ -10,6 +11,7 @@ rules:
 
 - name: rpi-ssh
   from: 127.0.0.1:22222
+  algorithm: least-connected
   to:
     - 192.168.1.19:22
     - 192.168.1.21:22

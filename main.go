@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -21,9 +22,10 @@ type ForwardingSet struct {
 }
 
 type Rule struct {
-	Name string   `yaml:"name"`
-	From string   `yaml:"from"`
-	To   []string `yaml:"to"`
+	Name      string   `yaml:"name"`
+	From      string   `yaml:"from"`
+	Algorithm string   `yaml:"algorithm"`
+	To        []string `yaml:"to"`
 }
 
 func main() {
@@ -49,6 +51,7 @@ version: 0.1
 rules:
 - name: rpi-k3s
   from: 127.0.0.1:6443
+  algorithm: round-robin
   to:
     - 192.168.1.19:6443
     - 192.168.1.21:6443
@@ -68,7 +71,7 @@ Flags:
 	}
 
 	flag.StringVar(&file, "f", "rules.yaml", "Job to run or leave blank for job.yaml in current directory")
-	flag.BoolVar(&verbose, "v", true, "Verbose output for opened and closed connections")
+	flag.BoolVar(&verbose, "v", false, "Verbose output for opened and closed connections")
 	flag.DurationVar(&dialTimeout, "t", time.Millisecond*1500, "Dial timeout")
 	flag.Parse()
 
@@ -94,11 +97,15 @@ Flags:
 	}
 
 	fmt.Printf("Starting mixctl by https://inlets.dev/\n\n")
+	fmt.Printf("%d\n", verbose)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(set.Rules))
-	for _, rule := range set.Rules {
-		fmt.Printf("Forwarding (%s) from: %s to: %s\n", rule.Name, rule.From, rule.To)
+	for i, rule := range set.Rules {
+		if rule.Algorithm == "" {
+			set.Rules[i].Algorithm = "random" // default algorithm
+		}
+		fmt.Printf("Forwarding (%s) from: %s to: %s algorithm: %s\n", rule.Name, rule.From, rule.To, rule.Algorithm)
 	}
 	fmt.Println()
 
@@ -106,7 +113,7 @@ Flags:
 		// Copy the value to avoid the loop variable being reused
 		r := rule
 		go func() {
-			if err := forward(r.Name, r.From, r.To, verbose, dialTimeout); err != nil {
+			if err := forward(r, verbose, dialTimeout); err != nil {
 				log.Printf("error forwarding %s", err.Error())
 				os.Exit(1)
 			}
@@ -117,18 +124,21 @@ Flags:
 	wg.Wait()
 }
 
-func forward(name, from string, to []string, verbose bool, dialTimeout time.Duration) error {
-	seed := time.Now().UnixNano()
-
-	localRand := rand.New(rand.NewSource(seed))
-
-	fmt.Printf("Listening on: %s\n", from)
-	l, err := net.Listen("tcp", from)
+func forward(rule Rule, verbose bool, dialTimeout time.Duration) error {
+	fmt.Printf("Listening on: %s\n", rule.From)
+	l, err := net.Listen("tcp", rule.From)
 	if err != nil {
-		return fmt.Errorf("error listening on %s %s", from, err.Error())
+		return fmt.Errorf("error listening on %s %s", rule.From, err.Error())
 	}
 
 	defer l.Close()
+
+	seed := time.Now().UnixNano()
+	localRand := rand.New(rand.NewSource(seed))
+
+	roundRobinIndex := 0
+
+	connectedCounters := make([]atomic.Int32, len(rule.To))
 
 	for {
 		// accept a connection on the local port of the load balancer
@@ -137,20 +147,43 @@ func forward(name, from string, to []string, verbose bool, dialTimeout time.Dura
 			return fmt.Errorf("error accepting connection %s", err.Error())
 		}
 
-		// pick randomly from the list of upstream servers
-		// available
-		index := localRand.Intn(len(to))
-		upstream := to[index]
+		// pick from the list of upstream servers according to algorithm
+		var index int
+		switch rule.Algorithm {
+		case "round-robin":
+			roundRobinIndex = (roundRobinIndex + 1) % len(rule.To)
+			index = roundRobinIndex
+		case "random":
+			index = localRand.Intn(len(rule.To))
+		case "least-connected":
+			// find least connected counter
+			minValue := connectedCounters[0].Load()
+			minIndex := 0
+			for i := range connectedCounters {
+				counterValue := connectedCounters[i].Load()
+				if counterValue < minValue {
+					minValue = counterValue
+					minIndex = i
+				}
+			}
+			index = minIndex
+		default:
+			fmt.Errorf("invalid load balancing algorithm %s. defaulting to random.", rule.Algorithm)
+			index = localRand.Intn(len(rule.To))
+		}
+
+		connectedCounters[index].Add(1)
+		upstream := rule.To[index]
 
 		// A separate Goroutine means the loop can accept another
 		// incoming connection on the local address
-		go connect(local, upstream, from, verbose, dialTimeout)
+		go connect(local, upstream, rule.From, verbose, dialTimeout, &connectedCounters[index])
 	}
 }
 
 // connect dials the upstream address, then copies data
 // between it and connection accepted on a local port
-func connect(local net.Conn, upstreamAddr, from string, verbose bool, dialTimeout time.Duration) {
+func connect(local net.Conn, upstreamAddr string, from string, verbose bool, dialTimeout time.Duration, connectCounter *atomic.Int32) {
 	defer local.Close()
 
 	// If Dial is used on its own, then the timeout can be as long
@@ -180,12 +213,14 @@ func connect(local net.Conn, upstreamAddr, from string, verbose bool, dialTimeou
 			upstream.RemoteAddr().String(),
 			local.RemoteAddr().String())
 	}
+
+	connectCounter.Add(-1) // decrease connected counter
 }
 
 // copy copies data between two connections using io.Copy
 // and will exit when either connection is closed or runs
 // into an error
-func copy(ctx context.Context, from, to net.Conn) error {
+func copy(ctx context.Context, from net.Conn, to net.Conn) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 	errgrp, _ := errgroup.WithContext(ctx)

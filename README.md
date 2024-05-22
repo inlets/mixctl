@@ -27,6 +27,7 @@ rules:
 
 - name: rpi-ssh
   from: 127.0.0.1:22222
+  algorithm: round-robin
   to:
     - 192.168.1.19:22
     - 192.168.1.21:22
@@ -39,7 +40,7 @@ rules:
 
 4) Now, if you're an inlets user, run `inlets-pro tcp client --ports 6443 --ports 22222 --upstream 127.0.0.1`, this exposes the ports that mixctl is listening to the tunnel server.
 
-4) Connect to ports 6443 or 22222 on your inlets Pro tunnel server to access any of the servers in the "to" array. The connections will be load balanced (with a random spread) if there are multiple hosts in the `to` field.
+4) Connect to ports 6443 or 22222 on your inlets Pro tunnel server to access any of the servers in the "to" array. The connections will be load balanced according to chosen algorithm if there are multiple hosts in the `to` field. The algorithm can be `random` (default) or `round-robin` or `least-connected`.
 
 To make the upstream address listen on all interfaces, use `0.0.0.0` instead of `127.0.0.1` in the `from` field.
 
