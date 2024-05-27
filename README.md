@@ -22,7 +22,7 @@ rules:
   from: 127.0.0.1:6443
   to:
     - 192.168.1.19:6443
-    - 192.168.1.21:6443
+    - 192.168.1.1@192.168.1.21:6443
     - 192.168.1.20:6443
 
 - name: rpi-ssh
@@ -45,6 +45,8 @@ rules:
 To make the upstream address listen on all interfaces, use `0.0.0.0` instead of `127.0.0.1` in the `from` field.
 
 The port for the from and to addresses do not need to match.
+
+Local address (interface) used to connect can be added before each `to` address by using `@` as seperator.
 
 See also:
 * `-t` - specify the dial timeout for an upstream host in the "to" field of the config file.

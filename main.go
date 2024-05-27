@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -54,7 +55,7 @@ rules:
   algorithm: round-robin
   to:
     - 192.168.1.19:6443
-    - 192.168.1.21:6443
+    - 192.168.1.1@192.168.1.21:6443
     - 192.168.1.20:6443
 
 rules:
@@ -97,7 +98,6 @@ Flags:
 	}
 
 	fmt.Printf("Starting mixctl by https://inlets.dev/\n\n")
-	fmt.Printf("%d\n", verbose)
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(set.Rules))
@@ -125,10 +125,10 @@ Flags:
 }
 
 func forward(rule Rule, verbose bool, dialTimeout time.Duration) error {
-	fmt.Printf("Listening on: %s\n", rule.From)
+	log.Printf("Listening on: %s\n", rule.From)
 	l, err := net.Listen("tcp", rule.From)
 	if err != nil {
-		return fmt.Errorf("error listening on %s %s", rule.From, err.Error())
+		return err
 	}
 
 	defer l.Close()
@@ -144,12 +144,12 @@ func forward(rule Rule, verbose bool, dialTimeout time.Duration) error {
 		// accept a connection on the local port of the load balancer
 		local, err := l.Accept()
 		if err != nil {
-			return fmt.Errorf("error accepting connection %s", err.Error())
+			return err
 		}
 
 		// pick from the list of upstream servers according to algorithm
 		var index int
-		switch rule.Algorithm {
+		switch strings.ToLower(rule.Algorithm) {
 		case "round-robin":
 			roundRobinIndex = (roundRobinIndex + 1) % len(rule.To)
 			index = roundRobinIndex
@@ -157,6 +157,9 @@ func forward(rule Rule, verbose bool, dialTimeout time.Duration) error {
 			index = localRand.Intn(len(rule.To))
 		case "least-connected":
 			// find least connected counter
+			if verbose {
+				log.Printf("connected counts = %v", connectedCounters)
+			}
 			minValue := connectedCounters[0].Load()
 			minIndex := 0
 			for i := range connectedCounters {
@@ -168,7 +171,7 @@ func forward(rule Rule, verbose bool, dialTimeout time.Duration) error {
 			}
 			index = minIndex
 		default:
-			fmt.Errorf("invalid load balancing algorithm %s. defaulting to random.", rule.Algorithm)
+			log.Printf("invalid load balancing algorithm %s. defaulting to random.", rule.Algorithm)
 			index = localRand.Intn(len(rule.To))
 		}
 
@@ -188,9 +191,28 @@ func connect(local net.Conn, upstreamAddr string, from string, verbose bool, dia
 
 	// If Dial is used on its own, then the timeout can be as long
 	// as 2 minutes on MacOS for an unreachable host
-	upstream, err := net.DialTimeout("tcp", upstreamAddr, dialTimeout)
+	splitAddress := strings.Split(upstreamAddr, "@")
+	var upstream net.Conn
+	var err error
+	if len(splitAddress) == 1 {
+		upstream, err = net.DialTimeout("tcp", upstreamAddr, dialTimeout)
+	} else { // if local address specified
+		localAddress, err2 := net.ResolveTCPAddr("tcp", splitAddress[0]+":0") // append zero for arbitrary port
+		if err2 != nil {
+			log.Printf("error resolving local address %s %s", splitAddress[0], err2.Error())
+			connectCounter.Add(-1) // decrease counter if connection failed
+			return
+		}
+		destinationAddress := splitAddress[1]
+		var d net.Dialer
+		d.LocalAddr = localAddress
+		d.Timeout = dialTimeout
+		upstream, err = d.Dial("tcp", destinationAddress)
+	}
+
 	if err != nil {
 		log.Printf("error dialing %s %s", upstreamAddr, err.Error())
+		connectCounter.Add(-1) // decrease counter if connection failed
 		return
 	}
 	defer upstream.Close()
@@ -214,7 +236,8 @@ func connect(local net.Conn, upstreamAddr string, from string, verbose bool, dia
 			local.RemoteAddr().String())
 	}
 
-	connectCounter.Add(-1) // decrease connected counter
+	connectCounter.Add(-1) // decrease counter after connection closed
+
 }
 
 // copy copies data between two connections using io.Copy
