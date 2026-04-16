@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21 as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.26-alpine as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -24,7 +24,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 \
     -X github.com/inlets/mixctl/version.Platform=${TARGETARCH}" \
     -o /usr/bin/mixctl
 
-FROM --platform=${TARGETPLATFORM:-linux/amd64} scratch as release
+FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.23 as release
 COPY --from=builder /usr/bin/mixctl /
 
 ENTRYPOINT ["/mixctl"]
