@@ -24,7 +24,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} CGO_ENABLED=0 \
     -X github.com/inlets/mixctl/version.Platform=${TARGETARCH}" \
     -o /usr/bin/mixctl
 
-FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.23.4 as release
+FROM --platform=${TARGETPLATFORM:-linux/amd64} scratch as release
 COPY --from=builder /usr/bin/mixctl /
 
 ENTRYPOINT ["/mixctl"]

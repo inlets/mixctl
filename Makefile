@@ -15,7 +15,7 @@ publish:
 	@echo  $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) && \
 	docker buildx create --use --name=multiarch --node=multiarch && \
 	docker buildx build \
-		--platform linux/amd64,linux/arm/v7,linux/arm64,darwin/amd64,darwin/arm64 \
+		--platform linux/amd64,linux/arm/v7,linux/arm64 \
 		--push=true \
         --build-arg GIT_COMMIT=$(GIT_COMMIT) \
         --build-arg VERSION=$(VERSION) \
