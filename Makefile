@@ -23,6 +23,19 @@ publish:
 		--no-cache \
 		.
 
+.PHONY: buildx
+buildx:
+	@echo  $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) && \
+	docker buildx create --use --name=multiarch --node=multiarch && \
+	docker buildx build \
+		--platform linux/amd64 \
+		--push=false \
+        --build-arg GIT_COMMIT=$(GIT_COMMIT) \
+        --build-arg VERSION=$(VERSION) \
+		--tag $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) \
+		--no-cache \
+		.
+
 .PHONY: all
 all: gofmt test build dist hash
 
